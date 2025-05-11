@@ -1,0 +1,140 @@
+
+{% extends "store/base.html" %}
+{% load static %}
+{% block title %}Shopping Cart{% endblock %}
+{% block content %}
+
+
+<section class="section-content padding-y bg">
+<div class="container">
+
+<!-- ============================ COMPONENT 1 ================================= -->
+
+<div class="row">
+<aside class="col-lg-9">
+<div class="card">
+<table class="table table-borderless table-shopping-cart">
+<thead class="text-muted">
+<tr class="small text-uppercase">
+  <th scope="col">Product</th>
+  <th scope="col" width="120">Quantity</th>
+  <th scope="col" width="120">Price</th>
+  <th scope="col" class="text-right" width="200"> </th>
+</tr>
+</thead>
+<tbody>
+	{% if cart_items %}
+
+	{% for cart_item in cart_items %}
+<tr>
+	<td>
+		<figure class="itemside align-items-center">
+			<div class="aside"><img src="{{ cart_item.product.image.url }}" class="img-sm"></div>
+			<figcaption class="info">
+				<a href="#" class="title text-dark">{{ cart_item.product.name }}</a>
+				<p class="text-muted small">{{ cart_item.product.description }}</p>
+			</figcaption>
+		</figure>
+	</td>
+	<td> 
+		<!-- col.// -->
+			<div class="col"> 
+				<form action="{% url 'update_cart' cart_item.id %}" method="POST">
+					{% csrf_token %}
+					<div class="input-group input-spinner">
+						<div class="input-group-prepend">
+							<button type="submit" name="action" value="decrease" class="btn btn-light">
+								<i class="fa fa-minus"></i>
+							</button>
+						</div>
+						<span class="px-2 font-weight-bold" style="min-width: 24px; text-align: center; display: inline-block; color: #000;">
+							{{cart_item.quantity }}
+						</span>
+						<div class="input-group-append">
+							<button type="submit" name="action" value="increase" class="btn btn-light">
+								<i class="fa fa-plus"></i>
+							</button>
+						</div>
+					</div>
+				</form>
+			</div> <!-- col.// -->	
+	</td>
+	<td> 
+		<div class="price-wrap"> 
+			<var class="price">tk{{cart_item.sub_total}}</var> 
+			<del class="text-muted"> tk{{cart_item.product.old_price}}</del> 
+		</div> <!-- price-wrap .// -->
+	</td>
+	<td class="text-right"> 
+	<a href="{% url 'remove_cart_item' cart_item.id %}" class="btn btn-danger"> Remove</a>
+	</td>
+</tr>
+{% endfor %}
+	{% else %}
+	<tr>
+		<td colspan="4" class="text-center">Your cart is empty.</td>
+	</tr>
+	{% endif %}
+
+
+</tbody>
+</table>
+</div> <!-- card.// -->
+
+</aside> <!-- col.// -->
+	<aside class="col-lg-3">
+
+		<div class="card">
+		<div class="card-body">
+			<dl class="dlist-align">
+			  <dt>Total price:</dt>
+			  <dd class="text-right">tk{{total}}</dd>
+			</dl>
+			<dl class="dlist-align">
+				<!-- carts/cart.html -->
+					<form method="post" action="{% url 'cart' %}">
+						{% csrf_token %}
+						<div class="form-group">
+							<label for="shipping_location">shipping location:</label>
+							<select name="shipping_location" id="shipping_location" class="form-control">
+								<option value="inside_dhaka" {% if request.session.shipping_location == 'inside_dhaka' %}selected{% endif %}>
+								Inside dhaka(৳ 60)
+								</option>
+								<option value="outside_dhaka" {% if request.session.shipping_location == 'outside_dhaka' %}selected{% endif %}>
+									outside dhaka(৳120)
+								</option>
+							</select>
+						</div>
+						<button type="submit" class="btn btn-primary">shipping update</button>
+					</form>
+			  <!-- <dt>Shipping cost:</dt> -->
+			  <!-- <dd class="text-right"> $10.00</dd> -->
+			</dl>
+			<dl class="dlist-align">
+				<dt>shiping cost:</dt>
+				<dd class="text-right text-dark b"><strong>tk{{shipping}}</strong></dd>
+			  </dl>
+			<dl class="dlist-align">
+			  <dt>Grand Total:</dt>
+			  <dd class="text-right text-dark b"><strong>tk{{grand_total}}</strong></dd>
+			</dl>
+			<hr>
+			<p class="text-center mb-3">
+				<img src="{% static 'images/misc/payments.png' %}" height="26">
+			</p>
+			<a href="./place-order.html" class="btn btn-primary btn-block"> Checkout </a>
+			<a href="{% url 'store' %}" class="btn btn-light btn-block">Continue Shopping</a>
+		</div> <!-- card-body.// -->
+		</div> <!-- card.// -->
+
+</aside> <!-- col.// -->
+
+
+</div> <!-- row.// -->
+<!-- ============================ COMPONENT 1 END .// ================================= -->
+
+</div> <!-- container .//  -->
+</section>
+<!-- ========================= SECTION CONTENT END// ========================= -->
+
+{% endblock content %}

@@ -1,0 +1,58 @@
+{% extends 'store/base.html' %}
+{% block title %}Home{% endblock title %}
+{% load static %}
+{% block content %}
+
+<!-- ========================= SECTION MAIN ========================= -->
+<section class="section-intro padding-y-sm">
+<div class="container">
+{% for banner in  banners %}
+<div class="intro-banner-wrap">
+	
+	<img src="{{ banner.image.url }}" class="img-fluid rounded">
+	<div class="intro-banner-content">
+		<h2 class="intro-title">{{ banner.name }}</h2>
+
+    </div>
+{% endfor %}
+
+</div> <!-- container //  -->
+</section>
+<!-- ========================= SECTION MAIN END// ========================= -->
+
+<!-- ========================= SECTION  ========================= -->
+<section class="section-name padding-y-sm">
+<div class="container">
+
+<header class="section-heading">
+	<a href="./store.html" class="btn btn-outline-primary float-right">See all</a>
+	<h3 class="section-title">Popular products</h3>
+</header><!-- sect-heading -->
+
+	
+<div class="row">
+	{% for product in products %}
+	<div class="col-md-3">
+		<div class="card card-product-grid">
+			<a href="./product-detail.html" class="img-wrap"> <img src="{{ product.image.url }}"> </a>
+			<figcaption class="info-wrap">
+				<a href="{% url 'product_details' product.slug %}" class="title">{{ product.name }}</a>
+				<div class="price mt-1">৳ {{product.price}}</div> <!-- price-wrap.// -->
+				<del class="text-muted" style="margin-right: 5px;">৳ {{ product.old_price }}</del>
+			</figcaption>
+		</div>	
+	</div> <!-- col.// -->
+	{% endfor %}
+	
+
+</div> <!-- row.// -->
+
+</div><!-- container // -->
+</section>
+<!-- ========================= SECTION  END// ========================= -->
+
+{% endblock content %}
+
+
+
+

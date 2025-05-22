@@ -1,8 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from store.models import Product
+from store.models import Product,Variation,ProductVariant
 from .models import Cart, CartItem
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound,HttpResponse
 from django.urls import reverse
+from django.contrib import messages
+
+
 
 # Create your views here.
 
@@ -13,9 +16,49 @@ def _cart_id(request):
 
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-
-     # Current URL পেতে (যে পেজ থেকে রিকোয়েস্ট আসছে)
+    product_variations = []
+    # Current URL পেতে (যে পেজ থেকে রিকোয়েস্ট আসছে)
     redirect_url = request.META.get('HTTP_REFERER', reverse('cart'))
+    selected_stock = None 
+
+     # Init করা দরকার, না হলে UnboundLocalError হতে পারে
+    color_variation = None
+    size_variation = None
+
+    if request.method =='POST':
+        color=request.POST.get('color')
+        size=request.POST.get('size')
+
+        if color:
+            color_variation=Variation.objects.get(product=product,variation_category__iexact='color',variation_value__iexact=color,is_active=True)
+            product_variations.append(color_variation)
+
+        if size:
+            size_variation=Variation.objects.get(product=product,variation_category__iexact='size',variation_value__iexact=size,is_active=True)
+            product_variations.append(size_variation)
+
+        variant = None
+
+
+        if color_variation  and size_variation:
+            # ✅ ProductVariant মডেল থেকে সঠিক ভ্যারিয়েন্ট খুঁজুন
+            variant = ProductVariant.objects.filter(
+                product=product,
+                color=color_variation,
+                size=size_variation
+            ).first()
+            #stock a variant check ase kinh
+            if variant:
+                if variant.stock < 1:
+                    messages.error(request, "এই রঙ এবং সাইজের জন্য পণ্য স্টকে নেই!")
+                    return redirect(redirect_url)
+                selected_stock = variant.stock
+            else:
+                 messages.error(request, "এই রঙ এবং সাইজের জন্য পণ্য খুঁজে পাওয়া যায়নি!")
+                 return redirect(redirect_url)
+        
+                   
+
     # ✅ URL ভ্যালিডেশন: শুধু নিজের ডোমেইনের URL-এ রিডাইরেক্ট করুন
     from django.utils.http import url_has_allowed_host_and_scheme
     if not url_has_allowed_host_and_scheme(
@@ -39,23 +82,40 @@ def add_to_cart(request, product_id):
             user=request.user if request.user.is_authenticated else None,
             cart_id=_cart_id(request)
             )
-    cart.save()
+    # ✅ পুরানো CartItem আছে কিনা variation সহ চেক করা
+    existing_cart_items = CartItem.objects.filter(product=product, cart=cart)
+    cart_item = None
+    for item in existing_cart_items:
+        if list(item.variation.all()) == product_variations:
+            cart_item = item
+            break
 
-    try:
-        #Check if the product is already in the cart
-        cart_item = CartItem.objects.get(product=product, cart=cart)
+    # ✅ CartItem তৈরি বা update
+    if cart_item:
         cart_item.quantity += 1
         cart_item.save()
-    except CartItem.DoesNotExist:
-        #If not → create new cart item with quantity = 1
+    else:
         cart_item = CartItem.objects.create(
             product=product,
             quantity=1,
             cart=cart,
         )
-       
-        # Force session update
+        cart_item.variation.set(product_variations)
+        cart_item.save()
+
+    # ✅ Session update ও message
     request.session.modified = True
+    messages.success(request, f"{product.name} কার্টে যোগ হয়েছে!")
+    # ✅ যদি রিকোয়েস্টটা product details পেজ থেকে আসে, তাহলে context সহ পেজ দেখাও
+    if 'product' in redirect_url:
+        sizes = Variation.objects.filter(product=product, variation_category='size')
+        colors = Variation.objects.filter(product=product, variation_category='color')
+        return render(request, 'store/product-detail.html', {
+            'product': product,
+            'sizes': sizes,
+            'colors': colors,
+            'selected_stock': selected_stock,
+        })
 
     return redirect(redirect_url)
 
@@ -67,6 +127,8 @@ def cart_view(request):
     cart_items = None
     shipping = 0
     grand_total = 0
+   
+
 
     shipping_location = request.session.get('shipping_location', 'inside_dhaka')
     if request.method == 'POST':
@@ -102,6 +164,7 @@ def cart_view(request):
         pass  # কার্ট না থাকলে কিছু করবেন না
     
     context = {
+        
         'total': total,
         'quantity': quantity,
         'cart_items': cart_items,

@@ -59,8 +59,12 @@ class Product(models.Model):
             return{'amount': amount, 'percentage': percentage}
         else:
             return None
-
-        
+    @property
+    def total_stock(self):
+        variants_stock = ProductVariant.objects.filter(product=self).aggregate(total_stock=models.Sum('stock'))['total_stock']
+        if variants_stock is None:
+            return self.stock
+        return variants_stock  
 
     class Meta:
         verbose_name_plural = 'Products'
@@ -74,8 +78,6 @@ class Product(models.Model):
         if self.image:
             return mark_safe('<img src="{}" width="50" height="50" />'.format(self.image.url))
         return ''
-
-    
 
     def __str__(self):
         return self.name
@@ -96,3 +98,48 @@ class Banner(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+class VariationManager(models.Manager):
+    def sizes(self):
+        return super(VariationManager,self).filter(variation_category='size',is_active=True)  
+
+    def colors(self):
+        return super(VariationManager,self).filter(variation_category='color',is_active=True) 
+    
+
+variation_category_choice = (
+    ('color', 'Color'),
+    ('size', 'Size'),
+)
+    
+
+class Variation(models.Model):
+    product=models.ForeignKey(Product,on_delete=models.CASCADE)
+    variation_category=models.CharField(max_length=100,choices=variation_category_choice)
+    variation_value=models.CharField(max_length=100)
+    is_active=models.BooleanField(default=True)
+    created_at=models.DateTimeField(auto_now_add=True)
+
+    objects=VariationManager()
+
+    def __str__(self):
+        return self.variation_value
+
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    size = models.ForeignKey(Variation, on_delete=models.CASCADE, related_name='size_variants')
+    color = models.ForeignKey(Variation, on_delete=models.CASCADE, related_name='color_variants')
+    stock = models.PositiveIntegerField(default=0)
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.size.variation_value} / {self.color.variation_value}"
+    
+   
+       
+
+
+    
+

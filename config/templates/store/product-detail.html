@@ -4,6 +4,17 @@
 {% block content %}
 
 
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+
 <section class="section-content padding-y bg">
 
 <div class="container">
@@ -13,7 +24,7 @@
 <div class="card">
 	<div class="row no-gutters">
 		<aside class="col-md-6">
-<article class="gallery-wrap"> 
+		<article class="gallery-wrap"> 
 	<div class="img-big-wrap">
 	   <a href="#"><img src="{{ product.image.url}}"></a>
 	</div> <!-- img-big-wrap.// -->
@@ -21,77 +32,79 @@
 </article> <!-- gallery-wrap .end// -->
 		</aside>
 		<main class="col-md-6 border-left">
-<article class="content-body">
+<form action="{% url 'add_to_cart' product.id %}" method="POST">
+	{% csrf_token %}
+	<article class="content-body">
 
-<h2 class="title">{{product.name}}</h2>
+		<h2 class="title">{{product.name}}</h2>
 
-<div class="mb-3"> 
-	<var class="price h4">tk{{product.price}}</var> 
-	<del style="margin-left: 2px;">tk{{product.old_price}}</del>
-	{% if product.price_drop  %}
-    <p class="text-success">
-        You save: {{ product.price_drop.amount }} টাকা ({{ product.price_drop.percentage }}%)
-    </p>
-	{% endif %}
-</div> 
+		<div class="mb-3"> 
+			<var class="price h4">tk{{product.price}}</var> 
+			<del style="margin-left: 2px;">tk{{product.old_price}}</del>
+			{% if product.price_drop  %}
+			<p class="text-success">
+				You save: {{ product.price_drop.amount }} টাকা ({{ product.price_drop.percentage }}%)
+			</p>
+			{% endif %}
+		</div> 
 
-<p>{{product.description}} </p>
-
-
-<hr>
-	<div class="row">
-		<div class="item-option-select">
-			<h6>Choose Color</h6>
-			<div class="btn-group btn-group-sm btn-group-toggle" data-toggle="buttons">
-			  <label class="btn btn-light">
-			    <input type="radio" name="radio_color"> Silver
-			  </label>
-			  <label class="btn btn-light">
-			    <input type="radio" name="radio_color" > Gray
-			  </label>
-			  <label class="btn btn-light active">
-			    <input type="radio" name="radio_color checked"> Gold
-			  </label>
-			  <label class="btn btn-light">
-			    <input type="radio" name="radio_color"> Black
-			  </label>
-			</div> 
-		</div>
-	</div> <!-- row.// -->
-	<div class="row">
-		<div class="item-option-select">
-			<h6>Select Size</h6>
-			<div class="btn-group btn-group-sm btn-group-toggle" data-toggle="buttons">
-			  <label class="btn btn-light">
-			    <input type="radio" name="radio_color"> S
-			  </label>
-			  <label class="btn btn-light active">
-			    <input type="radio" name="radio_color" checked> M
-			  </label>
-			  <label class="btn btn-light">
-			    <input type="radio" name="radio_color"> L
-			  </label>
-			  <label class="btn btn-light">
-			    <input type="radio" name="radio_color"> XL
-			  </label>
-			</div> 
-		</div>
-	</div> <!-- row.// -->
-	<hr>
-	{% if product.stock > 0 %}
-	     {% if in_cart %}
-	<a href="#" class="btn  btn-success"> <span class="text">Added to cart</span> <i class="fas fa-check"></i>  </a>
-	<a href="{% url 'cart' %}" class="btn  btn-success"> <span class="text">view to cart</span> <i class="fas fa-eye"></i>  </a>
+			<p>{{product.description}} </p> <small><p>মোট স্টক: {{ product.total_stock }}</p>
+</small>
 
 
-	     {% else %}
-	<a href="{% url 'add_to_cart' product.id %}" class="btn  btn-primary"> <span class="text">Add to cart</span> <i class="fas fa-shopping-cart"></i>  </a>
-	     {% endif %}
-	{% else %}
-	<a href="#" class="btn  btn-secondary disabled"> <span class="text">Out of Stock</span> <i class="fas fa-shopping-cart"></i>  </a>
-	{% endif %}
-	
-</article> <!-- product-info-aside .// -->
+			<hr>
+				<div class="row">
+					<div class="item-option-select">
+    <h6>Choose Color</h6>
+    <select name="color" class="form-control" required>
+        <option value="" disabled selected>choose color</option>
+        {% for item in available_colors %}
+            <option value="{{ item.color.variation_value }}"
+                {% if not item.is_available %} disabled {% endif %}>
+                {{ item.color.variation_value }}
+                {% if not item.is_available %} (Out of stock) {% endif %}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+				</div> <!-- row.// -->
+					<div class="row">
+						<div class="item-option-select">
+							<h6>Select Size</h6>
+							<select name="size" class="form-control" required >
+								<option value="" disabled selected >choose size</option>
+
+								{% for i in product.variation_set.sizes %}
+								
+								<option value="{{i.variation_value}}">{{i.variation_value}}</option>
+								
+								{% endfor %}
+
+								
+								
+							</select>
+						</div>
+					</div> <!-- row.// -->
+
+							{% if selected_stock != None %}
+			                   <p style="color:green;">✅ Total stock for selected variation: {{ selected_stock }}</p>
+		                    {% endif %}
+					<hr>
+					{% if product.stock > 0 %}
+						{% if in_cart %}
+					<a href="#" class="btn  btn-success"> <span class="text">Added to cart</span> <i class="fas fa-check"></i>  </a>
+					<a href="{% url 'cart' %}" class="btn  btn-success"> <span class="text">view to cart</span> <i class="fas fa-eye"></i>  </a>
+
+
+						{% else %}
+					<button href="#" type="submit" class="btn  btn-primary"> <span class="text">Add to cart</span> <i class="fas fa-shopping-cart"></i>  </button>
+						{% endif %}
+					{% else %}
+					<a href="#" class="btn  btn-secondary disabled"> <span class="text">Out of Stock</span> <i class="fas fa-shopping-cart"></i>  </a>
+					{% endif %}
+					
+	</article> <!-- product-info-aside .// -->
+	</form>
 		</main> <!-- col.// -->
 	</div> <!-- row.// -->
 </div> <!-- card.// -->

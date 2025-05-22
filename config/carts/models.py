@@ -1,5 +1,5 @@
 from django.db import models
-from store.models import Product
+from store.models import Product,Variation
 from account.models import UserAccount
 
 # Create your models here.
@@ -18,12 +18,12 @@ class Cart(models.Model):
     
 class CartItem(models.Model):
     product=models.ForeignKey(Product, on_delete=models.CASCADE,db_index=True)
+    variation=models.ManyToManyField(Variation,blank=True,db_index=True)
     cart=models.ForeignKey(Cart,on_delete=models.CASCADE,db_index=True)
     quantity=models.PositiveIntegerField()
     is_active=models.BooleanField(default=True)
 
-    class Meta:
-        unique_together = ('cart', 'product')
+    
 
     def sub_total(self):
         return self.product.price * self.quantity

@@ -33,6 +33,17 @@
 			<figcaption class="info">
 				<a href="#" class="title text-dark">{{ cart_item.product.name }}</a>
 				<p class="text-muted small">{{ cart_item.product.description }}</p>
+				{% if cart_item.variation.all %}
+				{% for item in cart_item.variation.all %}
+
+				{{ item.variation_category | capfirst }}:
+				 {{ item.variation_value | capfirst }} <br>
+
+				{% endfor %}
+				{% endif %}
+
+
+
 			</figcaption>
 		</figure>
 	</td>
@@ -42,20 +53,14 @@
 				<form action="{% url 'update_cart' cart_item.id %}" method="POST">
 					{% csrf_token %}
 					<div class="input-group input-spinner">
-						<div class="input-group-prepend">
-							<button type="submit" name="action" value="decrease" class="btn btn-light">
-								<i class="fa fa-minus"></i>
-							</button>
-						</div>
-						<span class="px-2 font-weight-bold" style="min-width: 24px; text-align: center; display: inline-block; color: #000;">
-							{{cart_item.quantity }}
-						</span>
-						<div class="input-group-append">
-							<button type="submit" name="action" value="increase" class="btn btn-light">
-								<i class="fa fa-plus"></i>
-							</button>
-						</div>
+						<form action="{% url 'update_cart' cart_item.id %}" method="POST" class="d-flex">
+							{% csrf_token %}
+							<button type="submit" name="action" value="decrease" class="btn btn-outline-secondary btn-sm">-</button>
+							<span class="px-3 d-flex align-items-center">{{ cart_item.quantity }}</span>
+							<button type="submit" name="action" value="increase" class="btn btn-outline-secondary btn-sm">+</button>
+						</form>
 					</div>
+
 				</form>
 			</div> <!-- col.// -->	
 	</td>
@@ -65,8 +70,9 @@
 			<del class="text-muted"> tk{{cart_item.product.old_price}}</del> 
 		</div> <!-- price-wrap .// -->
 	</td>
+
 	<td class="text-right"> 
-	<a href="{% url 'remove_cart_item' cart_item.id %}" class="btn btn-danger"> Remove</a>
+		<a href="{% url 'remove_cart_item' cart_item.id %}" class="btn btn-danger"> Remove</a>
 	</td>
 </tr>
 {% endfor %}
@@ -110,14 +116,14 @@
 			  <!-- <dt>Shipping cost:</dt> -->
 			  <!-- <dd class="text-right"> $10.00</dd> -->
 			</dl>
-			<dl class="dlist-align">
-				<dt>shiping cost:</dt>
-				<dd class="text-right text-dark b"><strong>tk{{shipping}}</strong></dd>
-			  </dl>
-			<dl class="dlist-align">
-			  <dt>Grand Total:</dt>
-			  <dd class="text-right text-dark b"><strong>tk{{grand_total}}</strong></dd>
-			</dl>
+					<dl class="dlist-align mb-2">
+						<dt class="text-muted">Shipping:</dt>
+						<dd class="text-right">Tk {{ shipping }}</dd>
+					</dl>
+		<dl class="dlist-align mb-3">
+			<dt class="font-weight-bold">Grand Total:</dt>
+			<dd class="text-right font-weight-bold">Tk {{ grand_total }}</dd>
+		</dl>
 			<hr>
 			<p class="text-center mb-3">
 				<img src="{% static 'images/misc/payments.png' %}" height="26">

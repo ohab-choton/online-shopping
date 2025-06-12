@@ -4,6 +4,10 @@ from .models import Cart, CartItem
 from django.http import HttpResponseNotFound,HttpResponse
 from django.urls import reverse
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from carts.cart_utils import get_cart_context
+
+from orders.forms import OrderForm,PaymentForm
 
 
 
@@ -122,21 +126,13 @@ def add_to_cart(request, product_id):
 
 
 def cart_view(request):
-    total = 0
-    quantity = 0
     cart_items = None
-    shipping = 0
-    grand_total = 0
-   
-
 
     shipping_location = request.session.get('shipping_location', 'inside_dhaka')
     if request.method == 'POST':
         # শিপিং লোকেশন আপডেট করুন
         shipping_location = request.POST.get('shipping_location', 'inside_dhaka')
-        request.session['shipping_location'] = shipping_location
-
-    
+        request.session['shipping_location'] = shipping_location 
     try:
         if request.user.is_authenticated:
             # লগিন ইউজারের কার্ট এবং আইটেম ফেচ করুন
@@ -146,22 +142,29 @@ def cart_view(request):
             # অ্যানোনিমাস ইউজারের জন্য সেশন-বেজড কার্ট
             cart = Cart.objects.get(cart_id=_cart_id(request))
             cart_items = CartItem.objects.filter(cart=cart, is_active=True)
-        
-        # টোটাল এবং কোয়ান্টিটি ক্যালকুলেট (উভয় কেসের জন্য)
-        for cart_item in cart_items:
-            total += (cart_item.product.price * cart_item.quantity)
-            quantity += cart_item.quantity
 
-        if shipping_location == 'inside_dhaka':
-            shipping = 60
-        elif shipping_location == 'outside_dhaka':
-            shipping = 120
+        # came form utils.py for calculate totals 
+        totals = get_cart_context(request)
+        total = totals['total']
+        quantity = totals['quantity']
+        shipping = totals['shipping']
+        grand_total = totals['grand_total']
         
-        grand_total = total + shipping
+        # # টোটাল এবং কোয়ান্টিটি ক্যালকুলেট (উভয় কেসের জন্য)
+        # for cart_item in cart_items:
+        #     total += (cart_item.product.price * cart_item.quantity)
+        #     quantity += cart_item.quantity
+
+        # if shipping_location == 'inside_dhaka':
+        #     shipping = 60
+        # elif shipping_location == 'outside_dhaka':
+        #     shipping = 120
+        
+        # grand_total = total + shipping
         
     
     except Cart.DoesNotExist:
-        pass  # কার্ট না থাকলে কিছু করবেন না
+        total = quantity = shipping = grand_total = 0
     
     context = {
         
@@ -202,5 +205,56 @@ def remove_cart_item(request, item_id):
         except Cart.DoesNotExist:
             return HttpResponseNotFound("Cart item does not exist")
         return redirect('cart')
+
+@login_required(login_url='login')
+#checkout using SOLID structure way.
+def get_cart_context(request):
+    total = 0
+    quantity = 0
+    cart_items = None
+    shipping = 0
+    grand_total = 0
+    shipping_location = request.session.get('shipping_location', 'inside_dhaka')
+
+    try:
+        if request.user.is_authenticated:
+            cart = Cart.objects.get(user=request.user)
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+        else:
+            cart = Cart.objects.get(cart_id=_cart_id(request))
+            cart_items = CartItem.objects.filter(cart=cart, is_active=True)
+
+        for cart_item in cart_items:
+            total += cart_item.product.price * cart_item.quantity
+            quantity += cart_item.quantity
+
+        if shipping_location == 'inside_dhaka':
+            shipping = 60
+        elif shipping_location == 'outside_dhaka':
+            shipping = 120
+
+        grand_total = total + shipping
+
+    except Cart.DoesNotExist:
+        pass
+
+    return {
+        'total': total,
+        'quantity': quantity,
+        'cart_items': cart_items,
+        'shipping': shipping,
+        'grand_total': grand_total,
+        'shipping_location': shipping_location,
+    }
+
+@login_required(login_url='login')
+def get_checkout(request):
+    context = get_cart_context(request)
+    context['form'] = OrderForm()
+    context['payment_method']=PaymentForm()
+
+    return render(request, 'carts/checkout.html', context)
+
+
 
 

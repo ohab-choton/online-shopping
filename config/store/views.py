@@ -72,6 +72,7 @@ def store(request):
     # Pagination
     paginator = Paginator(products, 2)
     page = request.GET.get('page')
+    print("Page requested:", page)  
 
     try:
         page_products = paginator.page(page)

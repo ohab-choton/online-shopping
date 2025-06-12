@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'store',
     'account',
     'carts',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -65,6 +66,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 AUTH_USER_MODEL = 'account.UserAccount'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
 
 
 # Database
@@ -144,3 +149,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'ohab990@gmail.com'
 EMAIL_HOST_PASSWORD = 'uiis vttm jphl ulby'
+
+
+PAYPAL_CLIENT_ID = 'ATVV04-BLHPV4ekWMPmclI5y7H7ipImgdhK8xrcC1PIrJNiIDdo7EnmxG0VAH0E77J8g222_5XKf1uoy'
+PAYPAL_CLIENT_SECRET='EHhqL_GHozqDrLZtd206bXEXGz_Q8oW5eaoE7eGlAYHhnhieBQifgaI5a1bbSB0ewtzacq90QNBSzRbO'

@@ -25,16 +25,12 @@ def get_register(request):
             phone_number=form.cleaned_data['phone_number']
             email=form.cleaned_data['email']
             password=form.cleaned_data['password']
-
             username=email.split('@')[0]
             user=UserAccount.objects.create_user(first_name=first_name,last_name=last_name,  email=email,username=username,password=password)
             user.phone_number=phone_number
-            user.is_active=True
-            
             user.save()
-            
             messages.success(request, 'Registration successful')
-            return redirect('register')
+            return redirect('login')
 
     else:
         form=RegistrationForm()
@@ -46,21 +42,27 @@ def get_register(request):
 
 
 
-def get_login (request):
+def get_login(request):
+    # Check if user is already logged in and is admin/staff
+    if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+        # Admin is trying to access regular login, redirect to admin
+        messages.info(request, 'You are logged in as admin. Please use admin panel.')
+        return redirect('/admin/')
+    
     if request.method=="POST":
         email=request.POST.get('email')
         password=request.POST.get('password')
-        user=auth.authenticate(username=email,password=password)
+        user=auth.authenticate(email=email,password=password)
         if user is not None:
-            auth.login(request,user)
+            if user.is_staff or user.is_superuser:
+                messages.error(request, 'You are not allowed to login as a staff or superuser')
+                return redirect('login')
+            login(request, user)
             messages.success(request, 'Login successful')
             return redirect('index')
         else:
             messages.error(request, 'Invalid login credentials')
             return redirect('login')
-            
-            
-        
     return render(request, 'account/login.html')
 
 @login_required(login_url='login')

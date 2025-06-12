@@ -11,9 +11,13 @@ class Cart(models.Model):
     def __str__(self):
         return self.cart_id
     
-    def total_items(self):
+    def total_quantity(self):
         total_dict = self.cartitem_set.aggregate(total=models.Sum('quantity'))
         return total_dict['total'] if total_dict['total'] is not None else 0
+    
+    # Unique product count (যতটা পণ্য add করা হয়েছে)
+    def total_items(self):
+        return self.cartitem_set.count()
 
     
 class CartItem(models.Model):

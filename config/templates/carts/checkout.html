@@ -1,0 +1,183 @@
+{% extends "store/base.html" %}
+{% load static %}
+{% block title %}Checkout - Secure Payment{% endblock %}
+{% block content %}
+
+<section class="section-content padding-y bg-light">
+  <div class="container">
+
+    <form method="POST" action="{% url 'place-order' %}">
+      {% csrf_token %}
+      <div class="row">
+
+        <!-- ========================= BILLING ADDRESS ========================= -->
+        <aside class="col-lg-6 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+              <h5 class="mb-0"><i class="fas fa-address-card text-primary me-2"></i>Billing Address</h5>
+            </div>
+            <div class="card-body">
+              {% include "message/error-show.html" %}
+              <div class="row g-3">
+                <!-- Name Fields -->
+                <div class="col-md-6">
+                  <label for="first_name" class="form-label">First Name</label>
+                  {{ form.first_name }}
+                  {{ form.first_name.errors }}
+
+                </div>
+                <div class="col-md-6">
+                  <label for="last_name" class="form-label">Last Name</label>
+                  
+                  {{ form.last_name }}
+                </div>
+
+                <!-- Contact Info -->
+                <div class="col-md-6">
+                  <label for="email" class="form-label">Email</label>
+                 
+                  {{ form.email}}
+                </div>
+                <div class="col-md-6">
+                  <label for="phone" class="form-label">Phone Number</label>
+                 
+                  {{ form.phone }}
+                </div>
+
+                <!-- Address -->
+                <div class="col-12">
+                  <label for="address_line_1" class="form-label">Street Address</label>
+                  
+                  {{ form.address_line_1 }}
+                </div>
+
+                <!-- City/State -->
+                <div class="col-md-6">
+                  <label for="city" class="form-label">City</label>
+                 
+                  {{ form.city }}
+                </div>
+                <div class="col-md-6">
+                  <label for="state" class="form-label">State/Division</label>
+                 
+                  {{ form.state }}
+                </div>
+
+                <div class="col-md-6">
+                  <label for="country" class="form-label">country</label>
+                 
+                  {{ form.country }}
+                </div>
+
+
+                <!-- Additional Info -->
+                <div class="col-12">
+                  <label for="order_note" class="form-label">Order Notes</label>
+                  
+                  {{ form.order_note }}
+                </div>
+              </div>
+            
+            </div>
+          </div>
+        </aside>
+
+        <!-- ========================= ORDER SUMMARY ========================= -->
+        <aside class="col-lg-6">
+          <div class="card shadow-sm">
+            <div class="card-header bg-white border-bottom">
+              <h5 class="mb-0"><i class="fas fa-shopping-cart text-primary me-2"></i>Order Summary</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover table-borderless">
+                  <thead class="text-uppercase small text-muted">
+                    <tr>
+                      <th scope="col">Product</th>
+                      <th scope="col" class="text-center">Qty</th>
+                      <th scope="col" class="text-end">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for cart_item in cart_items %}
+                    <tr class="align-middle">
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <img src="{{ cart_item.product.image.url }}" 
+                              class="img-fluid rounded me-3" 
+                              style="width: 60px; height: 60px; object-fit: cover;">
+                          <div>
+                            <h6 class="mb-0">{{ cart_item.product.name }}</h6>
+                            {% if cart_item.variation.all %}
+                            <small class="text-muted">
+                              {% for item in cart_item.variation.all %}
+                              <div>{{ item.variation_category }}: {{ item.variation_value }}</div>
+                              {% endfor %}
+                            </small>
+                            {% endif %}
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <span class="mx-2">{{ cart_item.quantity }}</span>
+                      </td>
+                      <td class="text-end">
+                        <div class="text-nowrap">
+                          <span class="fw-bold">৳{{ cart_item.sub_total }}</span>
+                          <small class="text-muted d-block"><del>৳{{ cart_item.product.old_price }}</del></small>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Order Total -->
+              <div class="border-top pt-3">
+                <dl class="d-flex justify-content-between">
+                  <dt class="text-muted">Subtotal:</dt>
+                  <dd class="fw-bold">৳{{ total|default:"0.00" }}</dd>
+                </dl>
+                <dl class="d-flex justify-content-between">
+                  <dt class="text-muted">Shipping:</dt>
+                  <dd class="fw-bold">৳{{ shipping|default:"0.00" }}</dd>
+                </dl>
+                <dl class="d-flex justify-content-between h4 border-top pt-2">
+                  <dt>Total:</dt>
+                  <dd class="text-primary">৳{{ grand_total|default:"0.00" }}</dd>
+                </dl>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="fas fa-check-circle me-2"></i>Place Order
+                </button>
+                <a href="{% url 'store' %}" class="btn btn-outline-secondary">
+                  <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                </a>
+              </div>
+            </div>
+          </div>
+                   <div class="form-check">
+                    <h5>Payment Method</h5>
+
+                   {% for radio in payment_method.payment_method %}
+                      <div class="form-check form-check-inline me-3">
+                        {{ radio.tag }}
+                        <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+
+
+        </aside>
+
+      </div>
+    </form>
+  </div>
+</section>
+
+
+{% endblock content %}
